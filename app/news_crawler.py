@@ -1,7 +1,6 @@
 import aiohttp
 import asyncio
-import pandas as pd
-from config import get_secret
+from app.config import get_secret
 
 
 class NaverNewsScraper:

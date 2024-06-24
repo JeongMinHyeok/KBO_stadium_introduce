@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.models import mongodb
 from app.models.news import NewsModel
-from app.news_scraper import NaverNewsScraper
+from app.news_crawler import NaverNewsScraper
 
 BASE_DIR = Path(__file__).resolve().parent
 
