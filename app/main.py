@@ -3,9 +3,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-# from app.models import mongodb
-# from app.models.book import BookModel
-# from app.book_scraper import NaverBookScraper
+from app.models import mongodb
+from app.models.news import NewsModel
+from app.news_scraper import NaverNewsScraper
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -98,12 +98,3 @@ async def stadium(request: Request):
 #     print("bye")
 #     """after app shutdown"""
 #     mongodb.close()
-
-
-# @app.get("/items/{id}", response_class=HTMLResponse)
-# # {id}: 다이나믹 URL, 해당 id가 아래 함수로 전달됨 context를 통해 전달
-# # response_class = HTMLResponse: return값으로 html 파일을 서빙한다는 뜻
-# async def read_item(request: Request, id: str):
-#     return templates.TemplateResponse(
-#         request=request, name="index.html", context={"id": id, "hello": "hello"}
-#     )  # TemplateResponse는 request 키값이 필수

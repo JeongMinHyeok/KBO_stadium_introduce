@@ -69,6 +69,11 @@
             font-size: 0.9em;
             text-align: right; /* 날짜 우측 정렬 */
         }
+
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+            pointer-events: none;
+        }
     </style>
 
     <!-- Optional: Bootstrap JavaScript via unpkg -->
@@ -77,7 +82,7 @@
 <body>
     <header class="bg-dark text-white py-3">
         <div class="container d-flex justify-content-between align-items-center">
-            <h1><a href="/" class="text-white text-decoration-none">야구장 소개</a></h1>
+            <h1><a href="" class="text-white text-decoration-none">야구장 소개</a></h1>
             <nav>
                 <ul class="nav">
                     <li class="nav-item"><a href="stadium" class="nav-link text-white">야구장 소개</a></li>
@@ -103,61 +108,15 @@
                     <option value="3">내 팀 기사</option>
                 </select>
             </div>
-            <div class="news-item" onclick="location.href='#'">
-                <img src="/static/images/news1.jpg" alt="뉴스 이미지 1" onclick="event.stopPropagation(); location.href='#'">
-                <div class="news-item-content">
-                    <h5>뉴스 제목 1</h5>
-                    <p>뉴스 내용 1</p>
-                    <span class="news-date">2024-06-10</span>
-                </div>
+            <div id="news-list">
+                <!-- 뉴스 아이템들이 여기에 추가됩니다 -->
             </div>
-            <div class="news-item" onclick="location.href='#'">
-                <img src="/static/images/news2.jpg" alt="뉴스 이미지 2" onclick="event.stopPropagation(); location.href='#'">
-                <div class="news-item-content">
-                    <h5>뉴스 제목 2</h5>
-                    <p>뉴스 내용 2</p>
-                    <span class="news-date">2024-06-11</span>
-                </div>
-            </div>
-            <div class="news-item" onclick="location.href='#'">
-                <img src="/static/images/news3.jpg" alt="뉴스 이미지 3" onclick="event.stopPropagation(); location.href='#'">
-                <div class="news-item-content">
-                    <h5>뉴스 제목 3</h5>
-                    <p>뉴스 내용 3</p>
-                    <span class="news-date">2024-06-12</span>
-                </div>
-            </div>
-            <div class="news-item" onclick="location.href='#'">
-                <img src="/static/images/news4.jpg" alt="뉴스 이미지 4" onclick="event.stopPropagation(); location.href='#'">
-                <div class="news-item-content">
-                    <h5>뉴스 제목 4</h5>
-                    <p>뉴스 내용 4</p>
-                    <span class="news-date">2024-06-13</span>
-                </div>
-            </div>
-            <div class="news-item" onclick="location.href='#'">
-                <img src="/static/images/news5.jpg" alt="뉴스 이미지 5" onclick="event.stopPropagation(); location.href='#'">
-                <div class="news-item-content">
-                    <h5>뉴스 제목 5</h5>
-                    <p>뉴스 내용 5</p>
-                    <span class="news-date">2024-06-14</span>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end mt-3">
-                <button class="btn btn-primary">글쓰기</button>
+            <div class="d-flex justify-content-center mt-3">
+                <button class="btn btn-primary" id="load-more">더보기</button>
             </div>
             <nav aria-label="Page navigation" class="mt-3">
                 <ul class="pagination justify-content-center">
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item"><a class="page-link" href="#">4</a></li>
-                    <li class="page-item"><a class="page-link" href="#">5</a></li>
-                    <li class="page-item"><a class="page-link" href="#">6</a></li>
-                    <li class="page-item"><a class="page-link" href="#">7</a></li>
-                    <li class="page-item"><a class="page-link" href="#">8</a></li>
-                    <li class="page-item"><a class="page-link" href="#">9</a></li>
-                    <li class="page-item"><a class="page-link" href="#">10</a></li>
+                    <!-- 날짜 링크 생성 -->
                 </ul>
             </nav>
         </div>
@@ -181,6 +140,79 @@
                 });
             });
         });
+
+        // 현재 날짜를 기준으로 이전 3일, 이후 3일 날짜 계산 및 표시
+        function updatePagination(currentDate) {
+            const pagination = document.querySelector('.pagination');
+            pagination.innerHTML = '';
+
+            const current = new Date(currentDate);
+            for (let i = -3; i <= 3; i++) {
+                const date = new Date(current);
+                date.setDate(current.getDate() + i);
+
+                const li = document.createElement('li');
+                li.classList.add('page-item');
+
+                if (i === 0) {
+                    li.classList.add('active');
+                } else if (date > new Date()) {
+                    li.classList.add('disabled');
+                }
+
+                const a = document.createElement('a');
+                a.classList.add('page-link');
+                a.href = '#';
+                a.innerText = date.toISOString().split('T')[0];
+
+                if (!li.classList.contains('disabled')) {
+                    a.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        updatePagination(date.toISOString().split('T')[0]);
+                        // 해당 날짜의 뉴스를 로드하는 함수를 호출합니다.
+                        loadNewsForDate(date.toISOString().split('T')[0]);
+                    });
+                }
+
+                li.appendChild(a);
+                pagination.appendChild(li);
+            }
+        }
+
+        // 뉴스 데이터를 로드하는 함수
+        function loadNewsForDate(date, startIndex = 0, count = 8, append = false) {
+            const newsList = document.getElementById('news-list');
+            if (!append) {
+                newsList.innerHTML = ''; // 기존 뉴스 항목을 지웁니다.
+            }
+            // 여기서 실제 뉴스 데이터를 로드하는 코드를 작성해야 합니다.
+            // 예시 뉴스 데이터를 추가합니다.
+            for (let i = startIndex; i < startIndex + count; i++) {
+                const newsItem = document.createElement('div');
+                newsItem.classList.add('news-item');
+                newsItem.innerHTML = `
+                    <img src="/static/images/news${(i % 5) + 1}.jpg" alt="뉴스 이미지 ${i}" onclick="event.stopPropagation(); location.href='#'">
+                    <div class="news-item-content">
+                        <h5>뉴스 제목 ${i}</h5>
+                        <p>뉴스 내용 ${i}</p>
+                        <span class="news-date">${date}</span>
+                    </div>
+                `;
+                newsList.appendChild(newsItem);
+            }
+        }
+
+        // 더보기 버튼 클릭 시 더 많은 뉴스를 로드하는 함수
+        document.getElementById('load-more').addEventListener('click', function() {
+            const currentDate = document.querySelector('.pagination .active .page-link').innerText;
+            const currentNewsCount = document.getElementById('news-list').childElementCount;
+            loadNewsForDate(currentDate, currentNewsCount, 8, true);
+        });
+
+        // 페이지 로드 시 현재 날짜로 초기화 및 첫 뉴스 로드
+        const today = new Date().toISOString().split('T')[0];
+        updatePagination(today);
+        loadNewsForDate(today);
     </script>
 </body>
 </html>
