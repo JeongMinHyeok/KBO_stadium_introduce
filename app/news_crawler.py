@@ -37,6 +37,7 @@ class NaverNewsScraper:
                 if data is not None:
                     for news in data:
                         if 'kbaseball' in news['link']:
+                            news['pubDate'] = news['pubDate'][:-15]
                             result.append(news)
                         else:
                             pass

@@ -85,13 +85,13 @@
             <h1><a href="/" class="text-white text-decoration-none">야구장 소개</a></h1>
             <nav>
                 <ul class="nav">
-                    <li class="nav-item"><a href="stadium" class="nav-link text-white">야구장 소개</a></li>
-                    <li class="nav-item"><a href="products" class="nav-link text-white">여행상품</a></li>
-                    <li class="nav-item"><a href="news" class="nav-link text-white">뉴스</a></li>
-                    <li class="nav-item"><a href="ticket" class="nav-link text-white">티켓 예매</a></li>
-                    <li class="nav-item"><a href="community" class="nav-link text-white">커뮤니티</a></li>
+                    <li class="nav-item"><a href="/stadium" class="nav-link text-white">야구장 소개</a></li>
+                    <li class="nav-item"><a href="/products" class="nav-link text-white">여행상품</a></li>
+                    <li class="nav-item"><a href="#" id="news-link" class="nav-link text-white">뉴스</a></li>
+                    <li class="nav-item"><a href="/ticket" class="nav-link text-white">티켓 예매</a></li>
+                    <li class="nav-item"><a href="/community" class="nav-link text-white">커뮤니티</a></li>
                 </ul>
-            </nav>
+            </nav>            
         </div>
     </header>
     <div class="banner mt-3 text-center">
@@ -186,5 +186,12 @@
     <footer class="bg-dark text-white text-center py-3 mt-3">
         <p>© 2024 야구장 소개. 모든 권리 보유.</p>
     </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const newsLink = document.getElementById('news-link');
+            const today = new Date().toISOString().split('T')[0]; // 오늘 날짜를 YYYY-MM-DD 형식으로 구합니다.
+            newsLink.href = `/news/${today}`;
+        });
+    </script>    
 </body>
 </html>

@@ -42,20 +42,13 @@
 
         .news-item {
             display: flex;
+            flex-direction: column;
             border-bottom: 1px solid #ccc;
             padding: 10px 0;
         }
 
         .news-item:last-child {
             border-bottom: none;
-        }
-
-        .news-item img {
-            width: 100px; /* 이미지 너비 설정 */
-            height: 100px;
-            object-fit: cover;
-            margin-right: 20px;
-            cursor: pointer;
         }
 
         .news-item-content {
@@ -82,14 +75,14 @@
 <body>
     <header class="bg-dark text-white py-3">
         <div class="container d-flex justify-content-between align-items-center">
-            <h1><a href="" class="text-white text-decoration-none">야구장 소개</a></h1>
+            <h1><a href="/" class="text-white text-decoration-none">야구장 소개</a></h1>
             <nav>
                 <ul class="nav">
-                    <li class="nav-item"><a href="stadium" class="nav-link text-white">야구장 소개</a></li>
-                    <li class="nav-item"><a href="products" class="nav-link text-white">여행상품</a></li>
-                    <li class="nav-item"><a href="news" class="nav-link text-white">뉴스</a></li>
-                    <li class="nav-item"><a href="ticket" class="nav-link text-white">티켓 예매</a></li>
-                    <li class="nav-item"><a href="community" class="nav-link text-white">커뮤니티</a></li>
+                    <li class="nav-item"><a href="/stadium" class="nav-link text-white">야구장 소개</a></li>
+                    <li class="nav-item"><a href="/products" class="nav-link text-white">여행상품</a></li>
+                    <li class="nav-item"><a href="#" id="news-link" class="nav-link text-white">뉴스</a></li>
+                    <li class="nav-item"><a href="/ticket" class="nav-link text-white">티켓 예매</a></li>
+                    <li class="nav-item"><a href="/community" class="nav-link text-white">커뮤니티</a></li>
                 </ul>
             </nav>
         </div>
@@ -99,7 +92,7 @@
     </div>
     <div class="container mt-3">
         <h3>뉴스</h3>
-        <div class="news-container">
+        <!-- <div class="news-container">
             <div class="d-flex justify-content-end mb-3">
                 <select class="form-select w-auto">
                     <option selected>정렬 방식</option>
@@ -107,10 +100,21 @@
                     <option value="2">조회순</option>
                     <option value="3">내 팀 기사</option>
                 </select>
-            </div>
+            </div> -->
+            {% if news %}
             <div id="news-list">
-                <!-- 뉴스 아이템들이 여기에 추가됩니다 -->
+                {% for article in news %}
+                <div class="news-item">
+                    <div class="news-item-content">
+                        <h5><a href="{{ article.link }}" target="_blank">{{ article.title }}</a></h5>
+                        <span class="news-date">{{ article.pubDate }}</span>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <center><h3 style="color: gray">해당 날짜에 수집된 뉴스가 없습니다.</h3></center>
+            {% endif %}
             <div class="d-flex justify-content-center mt-3">
                 <button class="btn btn-primary" id="load-more">더보기</button>
             </div>
@@ -162,15 +166,14 @@
 
                 const a = document.createElement('a');
                 a.classList.add('page-link');
-                a.href = '#';
+                a.href = `/news/${date.toISOString().split('T')[0]}`;
                 a.innerText = date.toISOString().split('T')[0];
 
                 if (!li.classList.contains('disabled')) {
                     a.addEventListener('click', function(event) {
                         event.preventDefault();
-                        updatePagination(date.toISOString().split('T')[0]);
-                        // 해당 날짜의 뉴스를 로드하는 함수를 호출합니다.
-                        loadNewsForDate(date.toISOString().split('T')[0]);
+                        const selectedDate = date.toISOString().split('T')[0];
+                        window.location.href = `/news/${selectedDate}`;
                     });
                 }
 
@@ -179,27 +182,11 @@
             }
         }
 
-        // 뉴스 데이터를 로드하는 함수
-        function loadNewsForDate(date, startIndex = 0, count = 8, append = false) {
-            const newsList = document.getElementById('news-list');
-            if (!append) {
-                newsList.innerHTML = ''; // 기존 뉴스 항목을 지웁니다.
-            }
-            // 여기서 실제 뉴스 데이터를 로드하는 코드를 작성해야 합니다.
-            // 예시 뉴스 데이터를 추가합니다.
-            for (let i = startIndex; i < startIndex + count; i++) {
-                const newsItem = document.createElement('div');
-                newsItem.classList.add('news-item');
-                newsItem.innerHTML = `
-                    <img src="/static/images/news${(i % 5) + 1}.jpg" alt="뉴스 이미지 ${i}" onclick="event.stopPropagation(); location.href='#'">
-                    <div class="news-item-content">
-                        <h5>뉴스 제목 ${i}</h5>
-                        <p>뉴스 내용 ${i}</p>
-                        <span class="news-date">${date}</span>
-                    </div>
-                `;
-                newsList.appendChild(newsItem);
-            }
+        // URL을 업데이트하는 함수
+        function updateUrl(date) {
+            const url = new URL(window.location);
+            url.pathname = `/news/${date}`;
+            window.history.pushState({}, '', url);
         }
 
         // 더보기 버튼 클릭 시 더 많은 뉴스를 로드하는 함수
@@ -209,10 +196,22 @@
             loadNewsForDate(currentDate, currentNewsCount, 8, true);
         });
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const newsLink = document.getElementById('news-link');
+            const today = new Date().toISOString().split('T')[0]; // 오늘 날짜를 YYYY-MM-DD 형식으로 구합니다.
+            newsLink.href = `/news/${today}`;
+        });
+
         // 페이지 로드 시 현재 날짜로 초기화 및 첫 뉴스 로드
-        const today = new Date().toISOString().split('T')[0];
-        updatePagination(today);
-        loadNewsForDate(today);
+        const currentPath = window.location.pathname;
+        const dateFromPath = currentPath.split('/').pop();
+        const isValidDate = !isNaN(Date.parse(dateFromPath));
+
+        const initialDate = isValidDate ? dateFromPath : new Date().toISOString().split('T')[0];
+        
+        updatePagination(initialDate);
+        loadNewsForDate(initialDate);
+        updateUrl(initialDate); // 페이지 로드 시 현재 날짜를 URL에 반영
     </script>
 </body>
 </html>

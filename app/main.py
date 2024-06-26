@@ -2,6 +2,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from bleach import clean
+from datetime import datetime
+import asyncio
 from pathlib import Path
 from app.models import mongodb
 from app.models.news import NewsModel
@@ -10,6 +15,8 @@ from app.news_crawler import NaverNewsScraper
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="야구장 소개 홈페이지", version="0.0.1")
+
+scheduler = AsyncIOScheduler()
 
 # 정적 파일 경로 설정
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -31,11 +38,25 @@ async def stadium(request: Request):
         {"request": request, "title": "야구장 소개 홈페이지: 야구장 소개"},
     )
 
-@app.get("/news", response_class=HTMLResponse)
-async def stadium(request: Request):
-    return templates.TemplateResponse(
-        "./news.html",
-        {"request": request, "title": "야구장 소개 홈페이지: 뉴스"},
+@app.get("/news/{date}", response_class=HTMLResponse)
+async def news(request: Request, date: str):
+    print(date)
+    # DB 형식에 맞게 date 변환
+    date_object = datetime.strptime(date, '%Y-%m-%d')
+    formatted_date = date_object.strftime('%a, %d %b %Y')
+    if await mongodb.engine.find_one(NewsModel, NewsModel.pubDate == formatted_date):
+        news = await mongodb.engine.find(NewsModel, NewsModel.pubDate == formatted_date)
+        for article in news:
+            article.title = clean(article.title, tags=[], attributes={}, strip=True)
+        return templates.TemplateResponse(
+            "news.html",
+            {"request": request, "title": "야구장 소개 홈페이지: 뉴스", "news": news, "current_date": date}
+        )
+
+    else:
+        return templates.TemplateResponse(
+            "news.html",
+            {"request": request, "title": "야구장 소개 홈페이지: 뉴스", "current_date": date}
     )
 
 @app.get("/ticket", response_class=HTMLResponse)
@@ -45,56 +66,45 @@ async def stadium(request: Request):
         {"request": request, "title": "야구장 소개 홈페이지: 경기 일정 및 티켓 예매"},
     )
 
+async def collect_news_data():
+    keyword = "야구" # 야구가 포함된 뉴스만 크롤링
+    naver_news_scraper = NaverNewsScraper()
+    news = await naver_news_scraper.search(keyword, 10)
+    news_list = []
+    for n in news:
+        # 중복 확인, 중복 데이터일 경우 저장 리스트에 포함하지 않음
+        if await mongodb.engine.find_one(NewsModel, NewsModel.link == n["link"]):
+            continue
+        news_model = NewsModel(
+            title= n["title"],
+            originallink= n["originallink"],
+            link= n["link"],
+            description= n["description"],
+            pubDate= n["pubDate"] # 'pubDate': 'Wed, 26 Jun 2024'
+        )
+        news_list.append(news_model)
 
-# @app.get("/search", response_class=HTMLResponse)
-# async def search(request: Request, q: str):
-#     # 1. 쿼리에서 검색어 추출
-#     keyword = q
-#     # 예외처리
-#     # 검색어가 없을 경우 사용자에게 검색 요구
-#     if not keyword:
-#         return templates.TemplateResponse(
-#             "./index.html",
-#             {"request": request, "title": "콜렉터 북북이"},
-#         )
-#     # 해당 검색어에 대한 수집 데이터가 이미 DB에 있다면 해당 데이터를 return
-#     if await mongodb.engine.find_one(BookModel, BookModel.keyword == keyword):
-#         books = await mongodb.engine.find(BookModel, BookModel.keyword == keyword)
-#         return templates.TemplateResponse(
-#             "./index.html",
-#             {"request": request, "title": "콜렉터 북북이", "books": books},
-#         )
-#     # 2. 데이터 수집기로 해당 검색어에 대한 데이터 수집
-#     naver_book_scraper = NaverBookScraper()
-#     books = await naver_book_scraper.search(keyword, 10)
-#     book_models = []
-#     for book in books:
-#         book_model = BookModel(
-#             keyword=keyword,
-#             publisher=book["publisher"],
-#             price=book["discount"],
-#             image=book["image"],
-#         )
-#         book_models.append(book_model)
+    # 수집한 데이터가 있을 경우 DB에 저장
+    if news_list != []:
+        await mongodb.engine.save_all(news_list)
+        print('데이터 {}건 DB 저장 완료'.format(len(news_list)), datetime.now())
 
-#     # 3. 수집한 데이터를 DB에 저장
-#     await mongodb.engine.save_all(book_models)  # save_all: asyncio의 gather와 같은 기능
-
-#     return templates.TemplateResponse(
-#         request=request,
-#         context={"title": "콜렉터스 북북이", "keyword": q},
-#         name="index.html",
-#     )
+# 일정 시간마다 collect_and_store_data 함수 실행
+scheduler.add_job(collect_news_data, IntervalTrigger(seconds=1800))  # 30분마다 실행
+scheduler.start()
 
 
-# @app.on_event("startup")  # 앱이 실행될 때 아래 함수 실행됨
-# def on_app_start():
-#     """before app starts"""
-#     mongodb.connect()
+@app.on_event("startup")  # 앱이 실행될 때 아래 함수 실행됨
+def on_app_start():
+    """before app starts"""
+    mongodb.connect()
+    if not scheduler.running:
+        scheduler.start()
 
 
-# @app.on_event("shutdown")  # 앱이 종료될 때 아래 함수 실행됨
-# def on_app_shutdown():
-#     print("bye")
-#     """after app shutdown"""
-#     mongodb.close()
+@app.on_event("shutdown")  # 앱이 종료될 때 아래 함수 실행됨
+def on_app_shutdown():
+    print("bye")
+    """after app shutdown"""
+    scheduler.shutdown()
+    mongodb.close()
