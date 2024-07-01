@@ -5,3 +5,5 @@ motor
 odmantic
 bleach
 apscheduler
+selenium
+pandas
