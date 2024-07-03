@@ -78,6 +78,38 @@
 
     <!-- Optional: Bootstrap JavaScript via unpkg -->
     <script src="https://unpkg.com/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const newsLink = document.getElementById('news-link');
+            const today = new Date().toISOString().split('T')[0]; // 오늘 날짜를 YYYY-MM-DD 형식으로 구합니다.
+            newsLink.href = `/news/${today}`;
+
+            const ticketLink = document.getElementById('ticket-link');
+            let currentMonth = new Date().getMonth() + 1; // 현재 월 계산
+            currentMonth = currentMonth < 10 ? '0' + currentMonth : currentMonth; // 두 자리 형식으로 변환
+            ticketLink.href = `/ticket/${currentMonth}`; // 링크 설정
+
+            // 현재 월 설정
+            const urlParams = window.location.pathname.split('/').pop();
+            const currentMonthParam = urlParams.length === 2 ? urlParams : currentMonth; // URL에 month가 없으면 현재 월 사용
+            const monthSelect = document.getElementById('month-select');
+            monthSelect.value = currentMonthParam;
+
+            // 월 선택 시 URL 업데이트
+            monthSelect.addEventListener('change', function() {
+                let selectedMonth = monthSelect.value;
+                selectedMonth = selectedMonth.length === 1 ? '0' + selectedMonth : selectedMonth; // 두 자리 형식으로 변환
+                const url = new URL(window.location);
+                url.pathname = `/ticket/${selectedMonth}`;
+                window.location.href = url;
+            });
+
+            // URL 변경 시 새로고침
+            window.addEventListener('popstate', function(event) {
+                location.reload();
+            });
+        });
+    </script>
 </head>
 <body>
     <header class="bg-dark text-white py-3">
@@ -88,7 +120,7 @@
                     <li class="nav-item"><a href="/stadium" class="nav-link text-white">야구장 소개</a></li>
                     <li class="nav-item"><a href="/products" class="nav-link text-white">여행상품</a></li>
                     <li class="nav-item"><a href="#" id="news-link" class="nav-link text-white">뉴스</a></li>
-                    <li class="nav-item"><a href="/ticket" class="nav-link text-white">티켓 예매</a></li>
+                    <li class="nav-item"><a href="#" id="ticket-link" class="nav-link text-white">티켓 예매</a></li>
                     <li class="nav-item"><a href="/community" class="nav-link text-white">커뮤니티</a></li>
                 </ul>
             </nav>            
@@ -103,15 +135,16 @@
             <div class="schedule-header">
                 <h3>경기 일정 및 티켓 예매</h3>
                 <div class="filter">
-                    <select class="form-select" aria-label="연도 선택">
-                        <option selected>2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                    </select>
-                    <select class="form-select" aria-label="월 선택">
-                        <option selected>6월</option>
-                        <option value="5">5월</option>
-                        <option value="4">4월</option>
+                    <select class="form-select" aria-label="월 선택" id="month-select">
+                        <option value="03">3월</option>
+                        <option value="04">4월</option>
+                        <option value="05">5월</option>
+                        <option value="06">6월</option>
+                        <option value="07">7월</option>
+                        <option value="08">8월</option>
+                        <option value="09">9월</option>
+                        <option value="10">10월</option>
+                        <option value="11">11월</option>
                     </select>
                 </div>
             </div>
@@ -186,12 +219,5 @@
     <footer class="bg-dark text-white text-center py-3 mt-3">
         <p>© 2024 야구장 소개. 모든 권리 보유.</p>
     </footer>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const newsLink = document.getElementById('news-link');
-            const today = new Date().toISOString().split('T')[0]; // 오늘 날짜를 YYYY-MM-DD 형식으로 구합니다.
-            newsLink.href = `/news/${today}`;
-        });
-    </script>    
 </body>
 </html>

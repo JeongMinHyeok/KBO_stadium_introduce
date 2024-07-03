@@ -43,7 +43,6 @@ async def stadium(request: Request):
 
 @app.get("/news/{date}", response_class=HTMLResponse)
 async def news(request: Request, date: str):
-    print(date)
     # DB 형식에 맞게 date 변환
     date_object = datetime.strptime(date, '%Y-%m-%d')
     formatted_date = date_object.strftime('%a, %d %b %Y')
@@ -63,11 +62,13 @@ async def news(request: Request, date: str):
             {"request": request, "title": "야구장 소개 홈페이지: 뉴스", "current_date": date}
     )
 
-@app.get("/ticket", response_class=HTMLResponse)
-async def stadium(request: Request):
+@app.get("/ticket/{month}", response_class=HTMLResponse)
+async def stadium(request: Request, month: str):
+    if await mongodb.engine.find_one(CalenderModel, CalenderModel.date.startswith(month)):
+        print(CalenderModel.date)
     return templates.TemplateResponse(
         "./ticket.html",
-        {"request": request, "title": "야구장 소개 홈페이지: 경기 일정 및 티켓 예매"},
+        {"request": request, "month": month, "title": "야구장 소개 홈페이지: 경기 일정 및 티켓 예매"},
     )
 
 async def collect_news_data():
@@ -94,14 +95,14 @@ async def collect_news_data():
         print('뉴스 데이터 {}건 DB 저장 완료'.format(len(news_list)), datetime.now())
 
 async def collect_game_calender():
-    month_list = ['03', '04', '05', '06', '07', '08', '09', '10', '11']
+    month_list = ['03', '04', '05', '06', '07', '08', '09', '10', '11'] # 월별 경기일정 수집을 위한 dropdown 선택 코드
     await mongodb.engine.remove(CalenderModel)
     game_calender_crawler = GameCalCrawler()
     for month in month_list:
         game_cal = game_calender_crawler.crawling(month)
-        if game_cal == '0':
+        if game_cal == '0': # 데이터가 없는 경우 다음 달로 이동
             continue
-        with open('./app/game_schedule/{0}m_calender.json'.format(month), 'r') as f:
+        with open('./app/game_schedule/{0}m_calender.json'.format(month), 'r') as f: # json 파일 읽기
             game_cal = json.load(f)
         game_list = []
         for game in game_cal:
@@ -122,7 +123,7 @@ async def collect_game_calender():
 
 # 일정 시간마다 collect_and_store_data 함수 실행
 scheduler.add_job(collect_news_data, IntervalTrigger(seconds=1800))  # 30분마다 실행
-scheduler.add_job(collect_game_calender, IntervalTrigger(seconds=60)) 
+scheduler.add_job(collect_game_calender, IntervalTrigger(seconds=36000)) # 하루에 두 번정도 수집할 생각
 scheduler.start()
 
 

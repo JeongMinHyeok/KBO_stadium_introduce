@@ -49,7 +49,7 @@
                     <li class="nav-item"><a href="/stadium" class="nav-link text-white">야구장 소개</a></li>
                     <li class="nav-item"><a href="/products" class="nav-link text-white">여행상품</a></li>
                     <li class="nav-item"><a href="#" id="news-link" class="nav-link text-white">뉴스</a></li>
-                    <li class="nav-item"><a href="/ticket" class="nav-link text-white">티켓 예매</a></li>
+                    <li class="nav-item"><a href="#" id="ticket-link" class="nav-link text-white">티켓 예매</a></li>
                     <li class="nav-item"><a href="/community" class="nav-link text-white">커뮤니티</a></li>
                 </ul>
             </nav>
@@ -86,6 +86,11 @@
             const newsLink = document.getElementById('news-link');
             const today = new Date().toISOString().split('T')[0]; // 오늘 날짜를 YYYY-MM-DD 형식으로 구합니다.
             newsLink.href = `/news/${today}`;
+
+            const ticketLink = document.getElementById('ticket-link');
+            let currentMonth = new Date().getMonth() + 1; // 현재 월 계산
+            currentMonth = currentMonth < 10 ? '0' + currentMonth : currentMonth; // 두 자리 형식으로 변환
+            ticketLink.href = `/ticket/${currentMonth}`; // 링크 설정
         });
     </script>
     

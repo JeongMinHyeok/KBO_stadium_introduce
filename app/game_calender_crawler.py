@@ -2,13 +2,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
-from pathlib import Path
 import pandas as pd
 
 class GameCalCrawler:
-
-    BASE_DIR = Path(__file__).resolve()
-    print(BASE_DIR)
 
     url = "https://www.koreabaseball.com/Schedule/Schedule.aspx"
 
@@ -42,7 +38,7 @@ class GameCalCrawler:
                 temp.insert(0, date) # 위에서 저장한 날짜 데이터 맨 앞에 추가
                 rows.append(temp)
 
-        rows.insert(0, header)
+        rows.insert(0, header) # 칼럼으로 지정해줄 데이터를 rows 리스트의 맨 앞에 넣어줌
 
         df = pd.DataFrame(rows)
         df = df.rename(columns=df.iloc[0]) # 첫 번째 행을 칼럼명으로 지정
