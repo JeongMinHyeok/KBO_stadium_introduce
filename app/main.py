@@ -30,14 +30,14 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(
-        "./index.html",
+        "index.html",
         {"request": request, "title": "야구장 소개 홈페이지"},
     )
 
 @app.get("/stadium", response_class=HTMLResponse)
 async def stadium(request: Request):
     return templates.TemplateResponse(
-        "./stadium.html",
+        "stadium.html",
         {"request": request, "title": "야구장 소개 홈페이지: 야구장 소개"},
     )
 
@@ -64,12 +64,32 @@ async def news(request: Request, date: str):
 
 @app.get("/ticket/{month}", response_class=HTMLResponse)
 async def stadium(request: Request, month: str):
-    if await mongodb.engine.find_one(CalenderModel, CalenderModel.date.startswith(month)):
-        print(CalenderModel.date)
-    return templates.TemplateResponse(
-        "./ticket.html",
-        {"request": request, "month": month, "title": "야구장 소개 홈페이지: 경기 일정 및 티켓 예매"},
-    )
+    if await mongodb.engine.find_one(CalenderModel, CalenderModel.month == month):
+        schedule_data = {}
+        schedules = await mongodb.engine.find(CalenderModel, CalenderModel.month == month)
+        for schedule in schedules:
+            if schedule.date not in schedule_data:
+                schedule_data[schedule.date] = []
+
+            game_info = {
+                'time': schedule.time,
+                'game': schedule.game,
+                'tv': schedule.tv,
+                'stadium': schedule.stadium,
+                'note': schedule.note
+            }
+            schedule_data[schedule.date].append(game_info)
+
+        return templates.TemplateResponse(
+            "ticket.html",
+            {"request": request, "schedule": schedule_data, "month": month, "title": "야구장 소개 홈페이지: 경기 일정 및 티켓 예매"},
+        )
+    
+    else:
+        return templates.TemplateResponse(
+            "ticket.html",
+            {"request": request, "month": month, "title": "야구장 소개 홈페이지: 경기 일정 및 티켓 예매"},
+        )
 
 async def collect_news_data():
     keyword = "야구" # 야구가 포함된 뉴스만 크롤링
@@ -98,15 +118,16 @@ async def collect_game_calender():
     month_list = ['03', '04', '05', '06', '07', '08', '09', '10', '11'] # 월별 경기일정 수집을 위한 dropdown 선택 코드
     await mongodb.engine.remove(CalenderModel)
     game_calender_crawler = GameCalCrawler()
+    game_list = []
     for month in month_list:
         game_cal = game_calender_crawler.crawling(month)
         if game_cal == '0': # 데이터가 없는 경우 다음 달로 이동
             continue
         with open('./app/game_schedule/{0}m_calender.json'.format(month), 'r') as f: # json 파일 읽기
             game_cal = json.load(f)
-        game_list = []
         for game in game_cal:
             calender_model = CalenderModel(
+                    month= game['날짜'][:2],
                     date= game['날짜'],
                     time= game['시간'],
                     game= game['경기'],

@@ -2,6 +2,7 @@ from odmantic import Model
 
 
 class CalenderModel(Model):
+    month: str
     date: str
     time: str
     game: str

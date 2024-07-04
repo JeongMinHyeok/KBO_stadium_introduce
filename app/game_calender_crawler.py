@@ -21,35 +21,35 @@ class GameCalCrawler:
         select = Select(driver.find_element(By.ID, "ddlMonth"))
         select.select_by_value(month)
         table = driver.find_element(By.CLASS_NAME, "tbl-type06")
-        schedule = table.text
-
-        lines = schedule.strip().split('\n')
-        if lines[1] == '데이터가 없습니다.': # 해당 월 경기 데이터가 없을 경우
+        thead = table.find_element(By.TAG_NAME, "thead") # 테이블 칼럼 부분
+        header = thead.text.split() # df에 칼럼으로 쓸 부분 미리 빼놓음
+        tbody = table.find_element(By.TAG_NAME, "tbody") # 경기 일정이 있는 부분
+        rows = tbody.find_elements(By.TAG_NAME, "tr") # 각 라인 별 데이터 추출
+        if len(rows) == 1:
             return '0'
-        header = lines[0].split()
-        rows = []
 
-        for line in lines[1:]:
-            if line.split()[0].endswith(')'): # '날짜' 칼럼 데이터 위치에 ')'로 끝날경우 날짜 데이터로 판단
-                date = line.split(' ')[0] # 해당 날짜 저장(아래 데이터에 추가 위함)
-                rows.append(line.split(' '))
+        lines = []
+        for value in rows: # 라인 별로 반복문 돌며 데이터 추출
+            body = value.find_elements(By.TAG_NAME, "td")
+            schedule_list = []
+            for b in body:
+                schedule_list.append(b.text) # 칼럼 별 데이터들 라인 별로 리스트에 저장
+            lines.append(schedule_list) # 각 라인 별 데이터를 한번 더 리스트에 저장
+
+        # 날짜 데이터가 없는 라인을 위해 데이터 핸들링
+        data = []
+        game_day = None
+
+        for line in lines:
+            if line[0].endswith(')'): # 날짜 칼럼 데이터 위치에 ')'로 끝날 경우 날짜 데이터가 있다고 판단
+                game_day = line[0] # 해당 날짜 변수에 저장 후 data list에 바로 추가
+                data.append(line)
             else:
-                temp = line.split() # 임시 리스트에 저장한 뒤
-                temp.insert(0, date) # 위에서 저장한 날짜 데이터 맨 앞에 추가
-                rows.append(temp)
+                line.insert(0, game_day) # 날짜 데이터가 없을 경우 위에서 저장한 날짜 데이터 첫 번째 순서에 추가
+                data.append(line)
 
-        rows.insert(0, header) # 칼럼으로 지정해줄 데이터를 rows 리스트의 맨 앞에 넣어줌
-
-        df = pd.DataFrame(rows)
-        df = df.rename(columns=df.iloc[0]) # 첫 번째 행을 칼럼명으로 지정
-        df = df.drop(df.index[0])
-        if df['하이라이트'][1] != '하이라이트':
-            df['라디오'] = df['TV']
-            df['TV'] = df['하이라이트']
-        df = df.fillna('-')
-        df = df.drop(['게임센터', '하이라이트', '구장',], axis=1)
-        df.rename(columns = {"라디오":"구장"}, inplace=True)
-
+        df = pd.DataFrame(data, columns=header) # json으로 저장해주기 위해 데이터프레임 생성
+        df = df.replace('','-')
         df.to_json('./app/game_schedule/{0}m_calender.json'.format(month), force_ascii = False, orient='records', indent=4)
 
         driver.quit()

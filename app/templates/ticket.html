@@ -153,64 +153,33 @@
                     <tr>
                         <th>날짜</th>
                         <th>시간</th>
-                        <th>원정팀</th>
-                        <th>홈팀</th>
+                        <th>경기</th>
                         <th>구장</th>
-                        <th>액션</th>
+                        <th>TV</th>
+                        <th>비고</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% if schedule %}
+                        {% for day, games in schedule.items() %}
+                            {% for game in games %}
+                            <tr>
+                                {% if loop.index0 == 0 %}
+                                <td rowspan="{{ games|length }}">{{ day }}</td>
+                                {% endif %}
+                                <td>{{ game.time }}</td>
+                                <td>{{ game.game }}</td>
+                                <td>{{ game.stadium }}</td>
+                                <td>{{ game.tv }}</td>
+                                <td>{{ game.note }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% else %}
                     <tr>
-                        <td rowspan="5">2024-06-20</td>
-                        <td>14:00</td>
-                        <td>팀 A</td>
-                        <td>팀 B</td>
-                        <td>잠실</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm">티켓 예매</button>
-                            <button class="btn btn-secondary btn-sm">경기 결과</button>
-                        </td>
+                        <td colspan="6">해당 월에 경기 일정이 없습니다.</td>
                     </tr>
-                    <tr>
-                        <td>17:00</td>
-                        <td>팀 C</td>
-                        <td>팀 D</td>
-                        <td>고척</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm">티켓 예매</button>
-                            <button class="btn btn-secondary btn-sm">경기 결과</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>18:00</td>
-                        <td>팀 E</td>
-                        <td>팀 F</td>
-                        <td>사직</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm">티켓 예매</button>
-                            <button class="btn btn-secondary btn-sm">경기 결과</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>19:00</td>
-                        <td>팀 G</td>
-                        <td>팀 H</td>
-                        <td>문학</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm">티켓 예매</button>
-                            <button class="btn btn-secondary btn-sm">경기 결과</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>20:00</td>
-                        <td>팀 I</td>
-                        <td>팀 J</td>
-                        <td>대구</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm">티켓 예매</button>
-                            <button class="btn btn-secondary btn-sm">경기 결과</button>
-                        </td>
-                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
