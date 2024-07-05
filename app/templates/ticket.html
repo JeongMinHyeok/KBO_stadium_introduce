@@ -108,6 +108,17 @@
             window.addEventListener('popstate', function(event) {
                 location.reload();
             });
+
+            // 티켓 예매 버튼 클릭 이벤트 설정
+            const ticketButtons = document.querySelectorAll('.btn-primary');
+            ticketButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault(); // 기본 동작 방지
+                    const url = this.getAttribute('href');
+                    // window.location.href = url; // 현재 창에서 이동
+                    window.open(url, '_blank'); // 새 창에서 열기
+                });
+            });
         });
     </script>
 </head>
@@ -157,6 +168,7 @@
                         <th>구장</th>
                         <th>TV</th>
                         <th>비고</th>
+                        <th>티켓예매</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -172,12 +184,15 @@
                                 <td>{{ game.stadium }}</td>
                                 <td>{{ game.tv }}</td>
                                 <td>{{ game.note }}</td>
+                                <td>
+                                    <a href="{{ game.ticket }}" class="btn btn-primary btn-sm">티켓 예매</a>
+                                </td>
                             </tr>
                             {% endfor %}
                         {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="6">해당 월에 경기 일정이 없습니다.</td>
+                        <td colspan="7">해당 월에 경기 일정이 없습니다.</td>
                     </tr>
                     {% endif %}
                 </tbody>

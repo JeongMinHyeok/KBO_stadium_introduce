@@ -66,6 +66,16 @@ async def news(request: Request, date: str):
 async def stadium(request: Request, month: str):
     if await mongodb.engine.find_one(CalenderModel, CalenderModel.month == month):
         schedule_data = {}
+        ticket_url = {'키움': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB003',
+                      '두산': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB004',
+                      'LG': 'https://www.ticketlink.co.kr/sports/baseball/59#reservation',
+                      'KT': 'https://www.ticketlink.co.kr/sports/baseball/62#reservation',
+                      'SG': 'https://www.ticketlink.co.kr/sports/baseball/476#reservation',
+                      'IA': 'https://www.ticketlink.co.kr/sports/baseball/58#reservation',
+                      '삼성': 'https://www.ticketlink.co.kr/sports/baseball/57#reservation',
+                      '한화': 'https://www.ticketlink.co.kr/sports/baseball/63#reservation',
+                      '롯데': 'https://www.giantsclub.com/html/?pcode=339',
+                      'NC': 'https://ticket.ncdinos.com/login'}
         schedules = await mongodb.engine.find(CalenderModel, CalenderModel.month == month)
         for schedule in schedules:
             if schedule.date not in schedule_data:
@@ -76,7 +86,8 @@ async def stadium(request: Request, month: str):
                 'game': schedule.game,
                 'tv': schedule.tv,
                 'stadium': schedule.stadium,
-                'note': schedule.note
+                'note': schedule.note,
+                'ticket': ticket_url[schedule.home_team]
             }
             schedule_data[schedule.date].append(game_info)
 
@@ -133,7 +144,8 @@ async def collect_game_calender():
                     game= game['경기'],
                     tv= game['TV'],
                     stadium= game['구장'],
-                    note= game['비고']
+                    note= game['비고'],
+                    home_team= game['경기'][-2:]
             )
             game_list.append(calender_model)
 

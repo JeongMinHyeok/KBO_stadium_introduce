@@ -9,5 +9,6 @@ class CalenderModel(Model):
     tv: str
     stadium: str
     note: str
+    home_team: str
 
     model_config = {"collection": "calender"}
