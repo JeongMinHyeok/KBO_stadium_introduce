@@ -7,6 +7,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from bleach import clean
 from datetime import datetime
 import html
+from bson import ObjectId
 from pathlib import Path
 from pydantic import BaseModel
 from app.models import mongodb
@@ -116,11 +117,15 @@ async def community(request: Request):
 
 @app.get("/community/read/{post_id}", response_class=HTMLResponse)
 async def notice_read(request: Request, post_id: str):
-    post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == post_id)
+    try:
+        post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == ObjectId(post_id))
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return templates.TemplateResponse(
-        "community.html",
+        "post.html",
         {"request": request, "post": post, "title": "야구장 소개 홈페이지"}
     )
 
@@ -141,23 +146,49 @@ async def notice_create(request: Request, title: str = Form(...), content: str =
         {"request": request, "posts": posts, "title": "야구장 소개 홈페이지"},
     )
 
-@app.put("/community/read/{post_id}")
-async def notice_update(request: Request, post_id: str, post: PostCreate):
-    existing_post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == post_id)
+@app.get("/community/update/{post_id}")
+async def get_update_page(request: Request, post_id: str):
+    try:
+        post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == ObjectId(post_id))
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return templates.TemplateResponse(
+        "update.html",
+        {"request": request, "post": post, "title": "야구장 소개 홈페이지"}
+    )
+
+
+@app.post("/community/update/{post_id}") # 실제로는 PUT 요청이지만, HTML 폼은 PUT을 지원하지 않으므로 POST 메소드 사용 (HTML 폼에서 PUT 메소드 필드 추가 == 실제로는 PUT 요청이 처리됨)
+async def notice_update(request: Request, post_id: str, title: str = Form(...), content: str = Form(...)):
+    try:
+        existing_post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == ObjectId(post_id))
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
     if not existing_post:
         raise HTTPException(status_code=404, detail="Post not found")
-    existing_post.title = post.title
-    existing_post.content = post.content
+    
+    existing_post.title = title
+    existing_post.content = content
     existing_post.updated_at = datetime.now()
+
     await mongodb.engine.save(existing_post)
+    posts = await mongodb.engine.find(NoticeModel)
     return templates.TemplateResponse(
         "community.html",
-        {"request": request, "existing_post": existing_post, "title": "야구장 소개 홈페이지"},
+        {"request": request, "posts": posts, "existing_post": existing_post, "title": "야구장 소개 홈페이지"},
     )
 
 @app.delete("/community/read/{post_id}")
 async def notice_delete(request: Request, post_id: str):
-    post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == post_id)
+    try:
+        post = await mongodb.engine.find_one(NoticeModel, NoticeModel.id == ObjectId(post_id))
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     await mongodb.engine.delete(post)

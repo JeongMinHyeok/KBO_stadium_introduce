@@ -7,3 +7,4 @@ bleach
 apscheduler
 selenium
 pandas
+bson
